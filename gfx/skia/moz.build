@@ -722,7 +722,6 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
     SOURCES += [
         'trunk/src/ports/SkDebug_win.cpp',
         'trunk/src/ports/SkFontHost_win.cpp',
-        'trunk/src/ports/SkFontHost_win_dw.cpp',
         'trunk/src/ports/SkFontMgr_default_gdi.cpp',
         'trunk/src/ports/SkOSFile_win.cpp',
         'trunk/src/ports/SkThread_win.cpp',
@@ -743,7 +742,7 @@ if CONFIG['INTEL_ARCHITECTURE']:
         'trunk/src/opts/SkBitmapProcState_opts_SSSE3.cpp',
         'trunk/src/opts/SkBlitRect_opts_SSE2.cpp',
         'trunk/src/opts/SkBlitRow_opts_SSE2.cpp',
-        'trunk/src/opts/SkBlurImage_opts_SSE2.cpp',
+        trunk/src/opts/SkBlurImage_opts_SSE2.cpp',
         'trunk/src/opts/SkMorphology_opts_SSE2.cpp',
         'trunk/src/opts/SkUtils_opts_SSE2.cpp',
         'trunk/src/opts/SkXfermode_opts_none.cpp',

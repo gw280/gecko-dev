@@ -111,6 +111,7 @@ def generate_separated_sources(platform_sources):
     'SkBitmapChecksummer',
     'SkNativeGLContext',
     'SkFontConfig',
+    'SkFontHost_win_dw',
     'SkForceLinking',
     'SkMovie',
     'SkImageDecoder',
