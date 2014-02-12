@@ -900,6 +900,7 @@ gfxPlatform::SupportsAzureContentForDrawTarget(DrawTarget* aTarget)
 bool
 gfxPlatform::UseAcceleratedSkiaCanvas()
 {
+    return true;
   return Preferences::GetBool("gfx.canvas.azure.accelerated", false) &&
          mPreferredCanvasBackend == BackendType::SKIA;
 }

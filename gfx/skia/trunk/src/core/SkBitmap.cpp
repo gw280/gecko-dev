@@ -81,11 +81,13 @@ struct SkBitmap::MipMap : SkNoncopyable {
 
 SkBitmap::SkBitmap() {
     sk_bzero(this, sizeof(*this));
+    fMipMap=NULL;
 }
 
 SkBitmap::SkBitmap(const SkBitmap& src) {
     SkDEBUGCODE(src.validate();)
     sk_bzero(this, sizeof(*this));
+    fMipMap=NULL;
     *this = src;
     SkDEBUGCODE(this->validate();)
 }

@@ -139,7 +139,7 @@
 #endif
 
 #if !defined(GR_GL_PER_GL_FUNC_CALLBACK)
-    #define GR_GL_PER_GL_FUNC_CALLBACK                  0
+    #define GR_GL_PER_GL_FUNC_CALLBACK                  1
 #endif
 
 #if !defined(GR_GL_RGBA_8888_PIXEL_OPS_SLOW)

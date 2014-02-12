@@ -20,7 +20,7 @@ bool Scale(uint8_t* srcData, int32_t srcWidth, int32_t srcHeight, int32_t srcStr
 #ifdef USE_SKIA
   SkAlphaType alphaType;
   if (format == SurfaceFormat::B8G8R8A8) {
-    alphaType = kPremul_SkAlphaType;
+    alphaType = kUnpremul_SkAlphaType;
   } else {
     alphaType = kOpaque_SkAlphaType;
   }
