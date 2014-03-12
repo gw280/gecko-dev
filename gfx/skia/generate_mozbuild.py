@@ -250,6 +250,56 @@ def uniq(seq):
   seen_add = seen.add
   return [ x for x in seq if x not in seen and not seen_add(x)]
 
+def write_sources(f, values, indent):
+
+  # Unfortunately for now the gpu and pathops directories are
+  # non-unifiable. Keep track of this and fix it.
+  unified_blacklist = [
+    '_SSE',
+    '_SSSE',
+    '_neon',
+    'FontHost',
+    'SkBitmapProcState.cpp',
+    'SkBlitter_4444.cpp',
+    'SkBlitter_A1.cpp',
+    'SkBlitter_A8.cpp',
+    'SkBlitter_ARGB32.cpp',
+    'SkBlitter_RGB16.cpp',
+    'SkBlitter_Sprite.cpp',
+    'SkGlobalInitialization_default.cpp',
+    'SkParse.cpp',
+    'SkParsePath.cpp',
+    'SkScan_Antihair.cpp',
+    'SkScan_AntiPath.cpp',
+    'SkScan_Hairline.cpp',
+    'SkScan_Path.cpp',
+    'SkTwoPointConicalGradient.cpp',
+    'SkTwoPointRadialGradient.cpp',
+    'SkCondVar.cpp',
+    'src/gpu',
+    'src/pathops',
+  ]
+
+  def isblacklisted(value):
+    for item in unified_blacklist:
+      if value.find(item) >= 0:
+        return True
+
+    return False
+
+  sources = {}
+  sources['nonunified'] = set()
+  sources['unified'] = set()
+
+  for item in values:
+    if isblacklisted(item):
+      sources['nonunified'].add(item)
+    else:
+      sources['unified'].add(item)
+
+  write_list(f, "UNIFIED_SOURCES", sources['unified'], indent)
+  write_list(f, "SOURCES", sources['nonunified'], indent)
+  
 def write_list(f, name, values, indent):
   def write_indent(indent):
     for _ in range(indent):
@@ -277,32 +327,31 @@ def write_mozbuild(includes, sources):
 
   write_list(f, 'EXPORTS.skia', includes, 0)
 
-  write_list(f, 'SOURCES', sources['common'], 0)
+  write_sources(f, sources['common'], 0)
 
   f.write("if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('android', 'gonk'):\n")
-  write_list(f, 'SOURCES', sources['android'], 4)
+  write_sources(f, sources['android'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'cocoa':\n")
-  write_list(f, 'SOURCES', sources['mac'], 4)
+  write_sources(f, sources['mac'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_GTK']:\n")
-  write_list(f, 'SOURCES', sources['linux'], 4)
+  write_sources(f, sources['linux'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_QT']:\n")
-  write_list(f, 'SOURCES', sources['linux'], 4)
+  write_sources(f, sources['linux'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':\n")
-  write_list(f, 'SOURCES', sources['win'], 4)
+  write_sources(f, sources['win'], 4)
 
-  f.write("\n\n")
   f.write("if CONFIG['INTEL_ARCHITECTURE']:\n")
-  write_list(f, 'SOURCES', sources['intel'], 4)
+  write_sources(f, sources['intel'], 4)
 
   f.write("elif CONFIG['CPU_ARCH'] == 'arm' and CONFIG['GNU_CC']:\n")
-  write_list(f, 'SOURCES', sources['arm'], 4)
+  write_sources(f, sources['arm'], 4)
 
   f.write("else:\n")
-  write_list(f, 'SOURCES', sources['none'], 4)
+  write_sources(f, sources['none'], 4)
 
   f.write(footer)
 
