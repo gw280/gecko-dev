@@ -53,7 +53,7 @@ public:
     static const int32_t kIdentityWideOpenStateID = 0;
     static const int kIdentityMatID = 0;
 
-    class MatrixClipState : public SkNoncopyable {
+    class MatrixClipState : SkNoncopyable {
     public:
         class MatrixInfo {
         public:
@@ -62,29 +62,29 @@ public:
                 fMatrix.reset();
             }
 
-            bool preTranslate(SkScalar dx, SkScalar dy) {
+            void preTranslate(SkScalar dx, SkScalar dy) {
                 fMatrixID = -1;
-                return fMatrix.preTranslate(dx, dy);
+                fMatrix.preTranslate(dx, dy);
             }
 
-            bool preScale(SkScalar sx, SkScalar sy) {
+            void preScale(SkScalar sx, SkScalar sy) {
                 fMatrixID = -1;
-                return fMatrix.preScale(sx, sy);
+                fMatrix.preScale(sx, sy);
             }
 
-            bool preRotate(SkScalar degrees) {
+            void preRotate(SkScalar degrees) {
                 fMatrixID = -1;
-                return fMatrix.preRotate(degrees);
+                fMatrix.preRotate(degrees);
             }
 
-            bool preSkew(SkScalar sx, SkScalar sy) {
+            void preSkew(SkScalar sx, SkScalar sy) {
                 fMatrixID = -1;
-                return fMatrix.preSkew(sx, sy);
+                fMatrix.preSkew(sx, sy);
             }
 
-            bool preConcat(const SkMatrix& matrix) {
+            void preConcat(const SkMatrix& matrix) {
                 fMatrixID = -1;
-                return fMatrix.preConcat(matrix);
+                fMatrix.preConcat(matrix);
             }
 
             void setMatrix(const SkMatrix& matrix) {
@@ -108,7 +108,7 @@ public:
             typedef SkNoncopyable INHERITED;
         };
 
-        class ClipInfo : public SkNoncopyable {
+        class ClipInfo : SkNoncopyable {
         public:
             ClipInfo() {}
 
@@ -285,29 +285,29 @@ public:
 
     void restore();
 
-    bool translate(SkScalar dx, SkScalar dy) {
+    void translate(SkScalar dx, SkScalar dy) {
         this->call(kMatrix_CallType);
-        return fCurMCState->fMatrixInfo->preTranslate(dx, dy);
+        fCurMCState->fMatrixInfo->preTranslate(dx, dy);
     }
 
-    bool scale(SkScalar sx, SkScalar sy) {
+    void scale(SkScalar sx, SkScalar sy) {
         this->call(kMatrix_CallType);
-        return fCurMCState->fMatrixInfo->preScale(sx, sy);
+        fCurMCState->fMatrixInfo->preScale(sx, sy);
     }
 
-    bool rotate(SkScalar degrees) {
+    void rotate(SkScalar degrees) {
         this->call(kMatrix_CallType);
-        return fCurMCState->fMatrixInfo->preRotate(degrees);
+        fCurMCState->fMatrixInfo->preRotate(degrees);
     }
 
-    bool skew(SkScalar sx, SkScalar sy) {
+    void skew(SkScalar sx, SkScalar sy) {
         this->call(kMatrix_CallType);
-        return fCurMCState->fMatrixInfo->preSkew(sx, sy);
+        fCurMCState->fMatrixInfo->preSkew(sx, sy);
     }
 
-    bool concat(const SkMatrix& matrix) {
+    void concat(const SkMatrix& matrix) {
         this->call(kMatrix_CallType);
-        return fCurMCState->fMatrixInfo->preConcat(matrix);
+        fCurMCState->fMatrixInfo->preConcat(matrix);
     }
 
     void setMatrix(const SkMatrix& matrix) {
@@ -368,19 +368,19 @@ protected:
     // skp that must be filled in when the current open state is closed. These are
     // here rather then distributed across the MatrixClipState's because saveLayers
     // can cause MC states to be nested.
-    SkTDArray<int32_t>  *fSkipOffsets;
+    SkTDArray<int32_t>  *fSkipOffsets;  // TODO: should we store u32 or size_t instead?
 
     SkDEBUGCODE(void validate();)
 
     int MCStackPush(SkCanvas::SaveFlags flags);
 
-    void addClipOffset(int offset) {
+    void addClipOffset(size_t offset) {
         SkASSERT(NULL != fSkipOffsets);
         SkASSERT(kIdentityWideOpenStateID != fCurOpenStateID);
         SkASSERT(fCurMCState->fHasOpen);
         SkASSERT(!fCurMCState->fIsSaveLayer);
 
-        *fSkipOffsets->append() = offset;
+        *fSkipOffsets->append() = SkToS32(offset);
     }
 
     void writeDeltaMat(int currentMatID, int desiredMatID);

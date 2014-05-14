@@ -26,11 +26,18 @@ public:
     void toggleFilter(bool toggle) { fFilter = toggle; }
 
     void setMegaVizMode(bool megaVizMode) { fMegaVizMode = megaVizMode; }
+    bool getMegaVizMode() const { return fMegaVizMode; }
 
     /**
      * Enable or disable overdraw visualization
      */
     void setOverdrawViz(bool overdrawViz) { fOverdrawViz = overdrawViz; }
+    bool getOverdrawViz() const { return fOverdrawViz; }
+
+    void setOutstandingSaveCount(int saveCount) { fOutstandingSaveCount = saveCount; }
+    int getOutstandingSaveCount() const { return fOutstandingSaveCount; }
+
+    void setPicture(SkPicture* picture) { fPicture = picture; }
 
     /**
      * Enable or disable texure filtering override
@@ -118,6 +125,11 @@ public:
     SkTArray<SkString>* getDrawCommandsAsStrings() const;
 
     /**
+     * Returns an array containing an offset (in the SkPicture) for each command
+     */
+    SkTDArray<size_t>* getDrawCommandOffsets() const;
+
+    /**
         Returns length of draw command vector.
      */
     int getSize() const {
@@ -177,26 +189,12 @@ public:
     virtual void drawPoints(PointMode, size_t count, const SkPoint pts[],
                             const SkPaint&) SK_OVERRIDE;
 
-    virtual void drawPosText(const void* text, size_t byteLength,
-                             const SkPoint pos[], const SkPaint&) SK_OVERRIDE;
-
-    virtual void drawPosTextH(const void* text, size_t byteLength,
-                              const SkScalar xpos[], SkScalar constY,
-                              const SkPaint&) SK_OVERRIDE;
-
     virtual void drawRect(const SkRect& rect, const SkPaint&) SK_OVERRIDE;
 
     virtual void drawRRect(const SkRRect& rrect, const SkPaint& paint) SK_OVERRIDE;
 
     virtual void drawSprite(const SkBitmap&, int left, int top,
                             const SkPaint*) SK_OVERRIDE;
-
-    virtual void drawText(const void* text, size_t byteLength, SkScalar x,
-                          SkScalar y, const SkPaint&) SK_OVERRIDE;
-
-    virtual void drawTextOnPath(const void* text, size_t byteLength,
-                                const SkPath& path, const SkMatrix* matrix,
-                                const SkPaint&) SK_OVERRIDE;
 
     virtual void drawVertices(VertexMode, int vertexCount,
                               const SkPoint vertices[], const SkPoint texs[],
@@ -234,14 +232,18 @@ protected:
     virtual SaveLayerStrategy willSaveLayer(const SkRect*, const SkPaint*, SaveFlags) SK_OVERRIDE;
     virtual void willRestore() SK_OVERRIDE;
 
-    virtual void didTranslate(SkScalar, SkScalar) SK_OVERRIDE;
-    virtual void didScale(SkScalar, SkScalar) SK_OVERRIDE;
-    virtual void didRotate(SkScalar) SK_OVERRIDE;
-    virtual void didSkew(SkScalar, SkScalar) SK_OVERRIDE;
     virtual void didConcat(const SkMatrix&) SK_OVERRIDE;
     virtual void didSetMatrix(const SkMatrix&) SK_OVERRIDE;
 
     virtual void onDrawDRRect(const SkRRect&, const SkRRect&, const SkPaint&) SK_OVERRIDE;
+    virtual void onDrawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
+                            const SkPaint&) SK_OVERRIDE;
+    virtual void onDrawPosText(const void* text, size_t byteLength, const SkPoint pos[],
+                               const SkPaint&) SK_OVERRIDE;
+    virtual void onDrawPosTextH(const void* text, size_t byteLength, const SkScalar xpos[],
+                                SkScalar constY, const SkPaint&) SK_OVERRIDE;
+    virtual void onDrawTextOnPath(const void* text, size_t byteLength, const SkPath& path,
+                                  const SkMatrix* matrix, const SkPaint&) SK_OVERRIDE;
     virtual void onPushCull(const SkRect& cullRect) SK_OVERRIDE;
     virtual void onPopCull() SK_OVERRIDE;
 
@@ -254,6 +256,7 @@ protected:
 
 private:
     SkTDArray<SkDrawCommand*> fCommandVector;
+    SkPicture* fPicture;
     int fWidth;
     int fHeight;
     bool fFilter;
@@ -300,6 +303,13 @@ private:
         drawing anything else into the canvas.
      */
     void applyUserTransform(SkCanvas* canvas);
+
+    size_t getOpID() const {
+        if (NULL != fPicture) {
+            return fPicture->EXPERIMENTAL_curOpID();
+        }
+        return 0;
+    }
 
     typedef SkCanvas INHERITED;
 };

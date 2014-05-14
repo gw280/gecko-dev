@@ -1696,9 +1696,7 @@ void SkXPSDevice::drawPath(const SkDraw& d,
             }
             platonicPath.transform(*prePathMatrix, skeletalPath);
         } else {
-            if (!matrix.preConcat(*prePathMatrix)) {
-                return;
-            }
+            matrix.preConcat(*prePathMatrix);
         }
     }
 
@@ -2255,7 +2253,7 @@ static void text_draw_init(const SkPaint& paint,
             numGlyphGuess = byteLength / 2;
             break;
         default:
-            SK_DEBUGBREAK(true);
+            SK_ALWAYSBREAK(true);
     }
     procs.xpsGlyphs.setReserve(numGlyphGuess);
     procs.glyphUse = &glyphsUsed;
@@ -2408,11 +2406,6 @@ void SkXPSDevice::drawDevice(const SkDraw& d, SkBaseDevice* dev,
          "Could not get current visuals for layer.");
     HRVM(currentVisuals->Append(that->fCurrentXpsCanvas.get()),
          "Could not add layer to current visuals.");
-}
-
-bool SkXPSDevice::onReadPixels(const SkBitmap& bitmap, int x, int y,
-                               SkCanvas::Config8888) {
-    return false;
 }
 
 SkBaseDevice* SkXPSDevice::onCreateDevice(const SkImageInfo&, Usage) {

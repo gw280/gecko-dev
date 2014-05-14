@@ -205,8 +205,8 @@ bool SkDisplacementMapEffect::onFilterImage(Proxy* proxy,
         (displInput && !displInput->filterImage(proxy, src, ctx, &displ, &displOffset))) {
         return false;
     }
-    if ((displ.colorType() != kPMColor_SkColorType) ||
-        (color.colorType() != kPMColor_SkColorType)) {
+    if ((displ.colorType() != kN32_SkColorType) ||
+        (color.colorType() != kN32_SkColorType)) {
         return false;
     }
     SkIRect bounds;
@@ -257,11 +257,13 @@ void SkDisplacementMapEffect::computeFastBounds(const SkRect& src, SkRect* dst) 
 bool SkDisplacementMapEffect::onFilterBounds(const SkIRect& src, const SkMatrix& ctm,
                                    SkIRect* dst) const {
     SkIRect bounds = src;
-    if (getColorInput() && !getColorInput()->filterBounds(src, ctm, &bounds)) {
-        return false;
+    SkVector scale = SkVector::Make(fScale, fScale);
+    ctm.mapVectors(&scale, 1);
+    bounds.outset(SkScalarCeilToInt(scale.fX * SK_ScalarHalf),
+                  SkScalarCeilToInt(scale.fY * SK_ScalarHalf));
+    if (getColorInput()) {
+        return getColorInput()->filterBounds(bounds, ctm, dst);
     }
-    bounds.outset(SkScalarCeilToInt(fScale * SK_ScalarHalf),
-                  SkScalarCeilToInt(fScale * SK_ScalarHalf));
     *dst = bounds;
     return true;
 }
@@ -384,8 +386,8 @@ bool SkDisplacementMapEffect::filterImageGPU(Proxy* proxy, const SkBitmap& src, 
 
     GrTextureDesc desc;
     desc.fFlags = kRenderTarget_GrTextureFlagBit | kNoStencil_GrTextureFlagBit;
-    desc.fWidth = colorBM.width();
-    desc.fHeight = colorBM.height();
+    desc.fWidth = bounds.width();
+    desc.fHeight = bounds.height();
     desc.fConfig = kSkia8888_GrPixelConfig;
 
     GrAutoScratchTexture ast(context, desc);
@@ -410,6 +412,8 @@ bool SkDisplacementMapEffect::filterImageGPU(Proxy* proxy, const SkBitmap& src, 
                                         color))->unref();
     SkIRect colorBounds = bounds;
     colorBounds.offset(-colorOffset);
+    GrContext::AutoMatrix am;
+    am.setIdentity(context);
     SkMatrix matrix;
     matrix.setTranslate(-SkIntToScalar(colorBounds.x()),
                         -SkIntToScalar(colorBounds.y()));

@@ -64,9 +64,9 @@ public:
         colorScale = SkScalarClampMax(colorScale, SK_Scalar1);
         SkPoint3 color(lightColor * colorScale);
         return SkPackARGB32(255,
-                            SkClampMax(SkScalarFloorToInt(color.fX), 255),
-                            SkClampMax(SkScalarFloorToInt(color.fY), 255),
-                            SkClampMax(SkScalarFloorToInt(color.fZ), 255));
+                            SkClampMax(SkScalarRoundToInt(color.fX), 255),
+                            SkClampMax(SkScalarRoundToInt(color.fY), 255),
+                            SkClampMax(SkScalarRoundToInt(color.fZ), 255));
     }
 private:
     SkScalar fKD;
@@ -84,10 +84,10 @@ public:
             SkScalarPow(normal.dot(halfDir), fShininess));
         colorScale = SkScalarClampMax(colorScale, SK_Scalar1);
         SkPoint3 color(lightColor * colorScale);
-        return SkPackARGB32(SkClampMax(SkScalarFloorToInt(color.maxComponent()), 255),
-                            SkClampMax(SkScalarFloorToInt(color.fX), 255),
-                            SkClampMax(SkScalarFloorToInt(color.fY), 255),
-                            SkClampMax(SkScalarFloorToInt(color.fZ), 255));
+        return SkPackARGB32(SkClampMax(SkScalarRoundToInt(color.maxComponent()), 255),
+                            SkClampMax(SkScalarRoundToInt(color.fX), 255),
+                            SkClampMax(SkScalarRoundToInt(color.fY), 255),
+                            SkClampMax(SkScalarRoundToInt(color.fZ), 255));
     }
 private:
     SkScalar fKS;
@@ -943,7 +943,7 @@ bool SkDiffuseLightingImageFilter::onFilterImage(Proxy* proxy,
         return false;
     }
 
-    if (src.colorType() != kPMColor_SkColorType) {
+    if (src.colorType() != kN32_SkColorType) {
         return false;
     }
     SkIRect bounds;
@@ -1034,7 +1034,7 @@ bool SkSpecularLightingImageFilter::onFilterImage(Proxy* proxy,
         return false;
     }
 
-    if (src.colorType() != kPMColor_SkColorType) {
+    if (src.colorType() != kN32_SkColorType) {
         return false;
     }
 
@@ -1115,7 +1115,7 @@ SkLight* create_random_light(SkRandom* random) {
                                             random->nextU()));
         }
         default:
-            GrCrash();
+            SkFAIL("Unexpected value.");
             return NULL;
     }
 }

@@ -16,6 +16,7 @@
 #include "SkGlyph.h"
 #include "SkHRESULT.h"
 #include "SkMaskGamma.h"
+#include "SkMatrix22.h"
 #include "SkOTTable_maxp.h"
 #include "SkOTTable_name.h"
 #include "SkOTUtils.h"
@@ -284,15 +285,6 @@ protected:
 class FontMemResourceTypeface : public LogFontTypeface {
 public:
     /**
-     *  Takes ownership of fontMemResource.
-     */
-    FontMemResourceTypeface(SkTypeface::Style style, SkFontID fontID, const LOGFONT& lf, HANDLE fontMemResource) :
-        LogFontTypeface(style, fontID, lf, true), fFontMemResource(fontMemResource) {
-    }
-
-    HANDLE fFontMemResource;
-
-    /**
      *  The created FontMemResourceTypeface takes ownership of fontMemResource.
      */
     static FontMemResourceTypeface* Create(const LOGFONT& lf, HANDLE fontMemResource) {
@@ -309,6 +301,15 @@ protected:
     }
 
 private:
+    /**
+     *  Takes ownership of fontMemResource.
+     */
+    FontMemResourceTypeface(SkTypeface::Style style, SkFontID fontID, const LOGFONT& lf, HANDLE fontMemResource) :
+        LogFontTypeface(style, fontID, lf, true), fFontMemResource(fontMemResource) {
+    }
+
+    HANDLE fFontMemResource;
+
     typedef LogFontTypeface INHERITED;
 };
 
@@ -636,41 +637,16 @@ SkScalerContext_GDI::SkScalerContext_GDI(SkTypeface* rawTypeface,
     fRec.getSingleMatrix(&A);
     A.mapPoints(&h, 1);
 
-    // Find the Given's matrix [[c, -s],[s, c]] which rotates the baseline vector h
-    // (where the baseline is mapped to) to the positive horizontal axis.
-    const SkScalar& a = h.fX;
-    const SkScalar& b = h.fY;
-    SkScalar c, s;
-    if (0 == b) {
-        c = SkDoubleToScalar(_copysign(SK_Scalar1, a));
-        s = 0;
-    } else if (0 == a) {
-        c = 0;
-        s = SkDoubleToScalar(-_copysign(SK_Scalar1, b));
-    } else if (SkScalarAbs(b) > SkScalarAbs(a)) {
-        SkScalar t = a / b;
-        SkScalar u = SkDoubleToScalar(_copysign(SkScalarSqrt(SK_Scalar1 + t*t), b));
-        s = -1 / u;
-        c = -s * t;
-    } else {
-        SkScalar t = b / a;
-        SkScalar u = SkDoubleToScalar(_copysign(SkScalarSqrt(SK_Scalar1 + t*t), a));
-        c = 1 / u;
-        s = -c * t;
-    }
-
-    // G is the Given's Matrix for A (rotational matrix such that GA[0][1] == 0).
+    // G is the Givens Matrix for A (rotational matrix where GA[0][1] == 0).
     SkMatrix G;
-    G.setAll(c, -s, 0,
-             s,  c, 0,
-             0,  0, SkScalarToPersp(SK_Scalar1));
+    SkComputeGivensRotation(h, &G);
 
     // GA is the matrix A with rotation removed.
     SkMatrix GA(G);
     GA.preConcat(A);
 
     // realTextSize is the actual device size we want (as opposed to the size the user requested).
-    // gdiTextSide is the size we request from GDI.
+    // gdiTextSize is the size we request from GDI.
     // If the scale is negative, this means the matrix will do the flip anyway.
     SkScalar realTextSize = SkScalarAbs(GA.get(SkMatrix::kMScaleY));
     SkScalar gdiTextSize = SkScalarRoundToScalar(realTextSize);

@@ -167,17 +167,11 @@ public:
 
     virtual SkBaseDevice* onCreateDevice(const SkImageInfo&, Usage) SK_OVERRIDE;
 
-#ifdef SK_SUPPORT_LEGACY_WRITEPIXELSCONFIG
-    virtual void writePixels(const SkBitmap& bitmap, int x, int y,
-                                SkCanvas::Config8888 config8888) SK_OVERRIDE;
-#endif
     virtual SkSurface* newSurface(const SkImageInfo&) SK_OVERRIDE;
 
 protected:
     virtual const SkBitmap& onAccessBitmap() SK_OVERRIDE;
-    virtual bool onReadPixels(const SkBitmap& bitmap,
-                                int x, int y,
-                                SkCanvas::Config8888 config8888) SK_OVERRIDE;
+    virtual bool onReadPixels(const SkImageInfo&, void*, size_t, int x, int y) SK_OVERRIDE;
     virtual bool onWritePixels(const SkImageInfo&, const void*, size_t, int x, int y) SK_OVERRIDE;
 
     // The following methods are no-ops on a deferred device
@@ -330,9 +324,6 @@ void SkDeferredDevice::skipPendingCommands() {
         if (fPipeController.hasPendingCommands()) {
             fFreshFrame = true;
             flushPendingCommands(kSilent_PlaybackMode);
-            if (fNotificationClient) {
-                fNotificationClient->skippedPendingDrawCommands();
-            }
         }
     }
 }
@@ -369,9 +360,14 @@ void SkDeferredDevice::flushPendingCommands(PlaybackMode playbackMode) {
     }
     fPipeWriter.flushRecording(true);
     fPipeController.playback(kSilent_PlaybackMode == playbackMode);
-    if (playbackMode == kNormal_PlaybackMode && fNotificationClient) {
-        fNotificationClient->flushedDrawCommands();
+    if (fNotificationClient) {
+        if (playbackMode == kSilent_PlaybackMode) {
+            fNotificationClient->skippedPendingDrawCommands();
+        } else {
+            fNotificationClient->flushedDrawCommands();
+        }
     }
+
     fPreviousStorageAllocated = storageAllocatedForRecording();
 }
 
@@ -473,37 +469,6 @@ void SkDeferredDevice::prepareForImmediatePixelWrite() {
     fImmediateCanvas->flush();
 }
 
-#ifdef SK_SUPPORT_LEGACY_WRITEPIXELSCONFIG
-void SkDeferredDevice::writePixels(const SkBitmap& bitmap, int x, int y,
-                                 SkCanvas::Config8888 config8888) {
-
-    if (x <= 0 && y <= 0 && (x + bitmap.width()) >= width() &&
-        (y + bitmap.height()) >= height()) {
-        this->skipPendingCommands();
-    }
-
-    if (SkBitmap::kARGB_8888_Config == bitmap.config() &&
-        SkCanvas::kNative_Premul_Config8888 != config8888 &&
-        kPMColorAlias != config8888) {
-        //Special case config: no deferral
-        prepareForImmediatePixelWrite();
-        immediateDevice()->writePixels(bitmap, x, y, config8888);
-        return;
-    }
-
-    SkPaint paint;
-    paint.setXfermodeMode(SkXfermode::kSrc_Mode);
-    if (shouldDrawImmediately(&bitmap, NULL, getBitmapSizeThreshold())) {
-        prepareForImmediatePixelWrite();
-        fImmediateCanvas->drawSprite(bitmap, x, y, &paint);
-    } else {
-        this->recordingCanvas()->drawSprite(bitmap, x, y, &paint);
-        this->recordedDrawCommand();
-
-    }
-}
-#endif
-
 bool SkDeferredDevice::onWritePixels(const SkImageInfo& info, const void* pixels, size_t rowBytes,
                                    int x, int y) {
     SkASSERT(x >= 0 && y >= 0);
@@ -541,11 +506,10 @@ SkSurface* SkDeferredDevice::newSurface(const SkImageInfo& info) {
     return this->immediateDevice()->newSurface(info);
 }
 
-bool SkDeferredDevice::onReadPixels(
-    const SkBitmap& bitmap, int x, int y, SkCanvas::Config8888 config8888) {
+bool SkDeferredDevice::onReadPixels(const SkImageInfo& info, void* pixels, size_t rowBytes,
+                                    int x, int y) {
     this->flushPendingCommands(kNormal_PlaybackMode);
-    return fImmediateCanvas->readPixels(const_cast<SkBitmap*>(&bitmap),
-                                                   x, y, config8888);
+    return fImmediateCanvas->readPixels(info, pixels, rowBytes, x, y);
 }
 
 class AutoImmediateDrawIfNeeded {
@@ -759,30 +723,6 @@ bool SkDeferredCanvas::isDrawingToLayer() const {
     return this->drawingCanvas()->isDrawingToLayer();
 }
 
-void SkDeferredCanvas::didTranslate(SkScalar dx, SkScalar dy) {
-    this->drawingCanvas()->translate(dx, dy);
-    this->recordedDrawCommand();
-    this->INHERITED::didTranslate(dx, dy);
-}
-
-void SkDeferredCanvas::didScale(SkScalar sx, SkScalar sy) {
-    this->drawingCanvas()->scale(sx, sy);
-    this->recordedDrawCommand();
-    this->INHERITED::didScale(sx, sy);
-}
-
-void SkDeferredCanvas::didRotate(SkScalar degrees) {
-    this->drawingCanvas()->rotate(degrees);
-    this->recordedDrawCommand();
-    this->INHERITED::didRotate(degrees);
-}
-
-void SkDeferredCanvas::didSkew(SkScalar sx, SkScalar sy) {
-    this->drawingCanvas()->skew(sx, sy);
-    this->recordedDrawCommand();
-    this->INHERITED::didSkew(sx, sy);
-}
-
 void SkDeferredCanvas::didConcat(const SkMatrix& matrix) {
     this->drawingCanvas()->concat(matrix);
     this->recordedDrawCommand();
@@ -964,32 +904,29 @@ void SkDeferredCanvas::drawSprite(const SkBitmap& bitmap, int left, int top,
     this->recordedDrawCommand();
 }
 
-void SkDeferredCanvas::drawText(const void* text, size_t byteLength,
-                                SkScalar x, SkScalar y, const SkPaint& paint) {
+void SkDeferredCanvas::onDrawText(const void* text, size_t byteLength, SkScalar x, SkScalar y,
+                                  const SkPaint& paint) {
     AutoImmediateDrawIfNeeded autoDraw(*this, &paint);
     this->drawingCanvas()->drawText(text, byteLength, x, y, paint);
     this->recordedDrawCommand();
 }
 
-void SkDeferredCanvas::drawPosText(const void* text, size_t byteLength,
-                                   const SkPoint pos[], const SkPaint& paint) {
+void SkDeferredCanvas::onDrawPosText(const void* text, size_t byteLength, const SkPoint pos[],
+                                     const SkPaint& paint) {
     AutoImmediateDrawIfNeeded autoDraw(*this, &paint);
     this->drawingCanvas()->drawPosText(text, byteLength, pos, paint);
     this->recordedDrawCommand();
 }
 
-void SkDeferredCanvas::drawPosTextH(const void* text, size_t byteLength,
-                                    const SkScalar xpos[], SkScalar constY,
-                                    const SkPaint& paint) {
+void SkDeferredCanvas::onDrawPosTextH(const void* text, size_t byteLength, const SkScalar xpos[],
+                                      SkScalar constY, const SkPaint& paint) {
     AutoImmediateDrawIfNeeded autoDraw(*this, &paint);
     this->drawingCanvas()->drawPosTextH(text, byteLength, xpos, constY, paint);
     this->recordedDrawCommand();
 }
 
-void SkDeferredCanvas::drawTextOnPath(const void* text, size_t byteLength,
-                                      const SkPath& path,
-                                      const SkMatrix* matrix,
-                                      const SkPaint& paint) {
+void SkDeferredCanvas::onDrawTextOnPath(const void* text, size_t byteLength, const SkPath& path,
+                                        const SkMatrix* matrix, const SkPaint& paint) {
     AutoImmediateDrawIfNeeded autoDraw(*this, &paint);
     this->drawingCanvas()->drawTextOnPath(text, byteLength, path, matrix, paint);
     this->recordedDrawCommand();

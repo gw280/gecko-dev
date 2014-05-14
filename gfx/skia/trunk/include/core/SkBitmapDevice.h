@@ -30,39 +30,6 @@ public:
     */
     SkBitmapDevice(const SkBitmap& bitmap, const SkDeviceProperties& deviceProperties);
 
-#ifdef SK_SUPPORT_LEGACY_COMPATIBLEDEVICE_CONFIG
-    /**
-     *  Create a new raster device and have the pixels be automatically
-     *  allocated. The rowBytes of the device will be computed automatically
-     *  based on the config and the width.
-     *
-     *  @param config   The desired config for the pixels. If the request cannot
-     *                  be met, the closest matching support config will be used.
-     *  @param width    width (in pixels) of the device
-     *  @param height   height (in pixels) of the device
-     *  @param isOpaque Set to true if it is known that all of the pixels will
-     *                  be drawn to opaquely. Used as an accelerator when drawing
-     *                  these pixels to another device.
-     */
-    SkBitmapDevice(SkBitmap::Config config, int width, int height, bool isOpaque = false);
-
-    /**
-     *  Create a new raster device and have the pixels be automatically
-     *  allocated. The rowBytes of the device will be computed automatically
-     *  based on the config and the width.
-     *
-     *  @param config   The desired config for the pixels. If the request cannot
-     *                  be met, the closest matching support config will be used.
-     *  @param width    width (in pixels) of the device
-     *  @param height   height (in pixels) of the device
-     *  @param isOpaque Set to true if it is known that all of the pixels will
-     *                  be drawn to opaquely. Used as an accelerator when drawing
-     *                  these pixels to another device.
-     *  @param deviceProperties Properties which affect compositing.
-     */
-    SkBitmapDevice(SkBitmap::Config config, int width, int height, bool isOpaque,
-                   const SkDeviceProperties& deviceProperties);
-#endif
     static SkBitmapDevice* Create(const SkImageInfo&,
                                   const SkDeviceProperties* = NULL);
 
@@ -84,25 +51,6 @@ public:
 
     virtual SkImageInfo imageInfo() const SK_OVERRIDE;
 
-#ifdef SK_SUPPORT_LEGACY_WRITEPIXELSCONFIG
-    /**
-     *  DEPRECATED: This will be made protected once WebKit stops using it.
-     *              Instead use Canvas' writePixels method.
-     *
-     *  Similar to draw sprite, this method will copy the pixels in bitmap onto
-     *  the device, with the top/left corner specified by (x, y). The pixel
-     *  values in the device are completely replaced: there is no blending.
-     *
-     *  Currently if bitmap is backed by a texture this is a no-op. This may be
-     *  relaxed in the future.
-     *
-     *  If the bitmap has config kARGB_8888_Config then the config8888 param
-     *  will determines how the pixel valuess are intepreted. If the bitmap is
-     *  not kARGB_8888_Config then this parameter is ignored.
-     */
-    virtual void writePixels(const SkBitmap& bitmap, int x, int y,
-                             SkCanvas::Config8888 config8888) SK_OVERRIDE;
-#endif
     /**
      * Return the device's associated gpu render target, or NULL.
      */
@@ -207,14 +155,7 @@ protected:
         return pr;
     }
 
-    /**
-     * Implements readPixels API. The caller will ensure that:
-     *  1. bitmap has pixel config kARGB_8888_Config.
-     *  2. bitmap has pixels.
-     *  3. The rectangle (x, y, x + bitmap->width(), y + bitmap->height()) is
-     *     contained in the device bounds.
-     */
-    virtual bool onReadPixels(const SkBitmap&, int x, int y, SkCanvas::Config8888) SK_OVERRIDE;
+    virtual bool onReadPixels(const SkImageInfo&, void*, size_t, int x, int y) SK_OVERRIDE;
     virtual bool onWritePixels(const SkImageInfo&, const void*, size_t, int, int) SK_OVERRIDE;
     virtual void* onAccessPixels(SkImageInfo* info, size_t* rowBytes) SK_OVERRIDE;
 
@@ -265,11 +206,6 @@ private:
     // but cannot change the width/height, so there should be no change to
     // any clip information.
     virtual void replaceBitmapBackendForRasterSurface(const SkBitmap&) SK_OVERRIDE;
-
-#ifdef SK_SUPPORT_LEGACY_COMPATIBLEDEVICE_CONFIG
-    // in support of legacy constructors
-    void init(SkBitmap::Config config, int width, int height, bool isOpaque);
-#endif
 
     virtual SkBaseDevice* onCreateDevice(const SkImageInfo&, Usage) SK_OVERRIDE;
 

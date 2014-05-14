@@ -146,8 +146,8 @@ void shadeSpan16_radial_repeat(SkScalar fx, SkScalar dx, SkScalar fy, SkScalar d
 /////////////////////////////////////////////////////////////////////
 
 SkRadialGradient::SkRadialGradient(const SkPoint& center, SkScalar radius,
-                                   const Descriptor& desc)
-    : SkGradientShaderBase(desc),
+                                   const Descriptor& desc, const SkMatrix* localMatrix)
+    : SkGradientShaderBase(desc, localMatrix),
       fCenter(center),
       fRadius(radius)
 {
@@ -157,16 +157,30 @@ SkRadialGradient::SkRadialGradient(const SkPoint& center, SkScalar radius,
     rad_to_unit_matrix(center, radius, &fPtsToUnit);
 }
 
-void SkRadialGradient::shadeSpan16(int x, int y, uint16_t* dstCParam,
-                         int count) {
+size_t SkRadialGradient::contextSize() const {
+    return sizeof(RadialGradientContext);
+}
+
+SkShader::Context* SkRadialGradient::onCreateContext(const ContextRec& rec, void* storage) const {
+    return SkNEW_PLACEMENT_ARGS(storage, RadialGradientContext, (*this, rec));
+}
+
+SkRadialGradient::RadialGradientContext::RadialGradientContext(
+        const SkRadialGradient& shader, const ContextRec& rec)
+    : INHERITED(shader, rec) {}
+
+void SkRadialGradient::RadialGradientContext::shadeSpan16(int x, int y, uint16_t* dstCParam,
+                                                          int count) {
     SkASSERT(count > 0);
+
+    const SkRadialGradient& radialGradient = static_cast<const SkRadialGradient&>(fShader);
 
     uint16_t* SK_RESTRICT dstC = dstCParam;
 
     SkPoint             srcPt;
     SkMatrix::MapXYProc dstProc = fDstToIndexProc;
-    TileProc            proc = fTileProc;
-    const uint16_t* SK_RESTRICT cache = this->getCache16();
+    TileProc            proc = radialGradient.fTileProc;
+    const uint16_t* SK_RESTRICT cache = fCache->getCache16();
     int                 toggle = init_dither_toggle16(x, y);
 
     if (fDstToIndexClass != kPerspective_MatrixClass) {
@@ -187,12 +201,12 @@ void SkRadialGradient::shadeSpan16(int x, int y, uint16_t* dstCParam,
         }
 
         RadialShade16Proc shadeProc = shadeSpan16_radial_repeat;
-        if (SkShader::kClamp_TileMode == fTileMode) {
+        if (SkShader::kClamp_TileMode == radialGradient.fTileMode) {
             shadeProc = shadeSpan16_radial_clamp;
-        } else if (SkShader::kMirror_TileMode == fTileMode) {
+        } else if (SkShader::kMirror_TileMode == radialGradient.fTileMode) {
             shadeProc = shadeSpan16_radial_mirror;
         } else {
-            SkASSERT(SkShader::kRepeat_TileMode == fTileMode);
+            SkASSERT(SkShader::kRepeat_TileMode == radialGradient.fTileMode);
         }
         (*shadeProc)(srcPt.fX, sdx, srcPt.fY, sdy, dstC,
                      cache, toggle, count);
@@ -389,14 +403,16 @@ void shadeSpan_radial_repeat(SkScalar fx, SkScalar dx, SkScalar fy, SkScalar dy,
 
 }  // namespace
 
-void SkRadialGradient::shadeSpan(int x, int y,
-                                SkPMColor* SK_RESTRICT dstC, int count) {
+void SkRadialGradient::RadialGradientContext::shadeSpan(int x, int y,
+                                                        SkPMColor* SK_RESTRICT dstC, int count) {
     SkASSERT(count > 0);
+
+    const SkRadialGradient& radialGradient = static_cast<const SkRadialGradient&>(fShader);
 
     SkPoint             srcPt;
     SkMatrix::MapXYProc dstProc = fDstToIndexProc;
-    TileProc            proc = fTileProc;
-    const SkPMColor* SK_RESTRICT cache = this->getCache32();
+    TileProc            proc = radialGradient.fTileProc;
+    const SkPMColor* SK_RESTRICT cache = fCache->getCache32();
     int toggle = init_dither_toggle(x, y);
 
     if (fDstToIndexClass != kPerspective_MatrixClass) {
@@ -416,12 +432,12 @@ void SkRadialGradient::shadeSpan(int x, int y,
         }
 
         RadialShadeProc shadeProc = shadeSpan_radial_repeat;
-        if (SkShader::kClamp_TileMode == fTileMode) {
+        if (SkShader::kClamp_TileMode == radialGradient.fTileMode) {
             shadeProc = shadeSpan_radial_clamp;
-        } else if (SkShader::kMirror_TileMode == fTileMode) {
+        } else if (SkShader::kMirror_TileMode == radialGradient.fTileMode) {
             shadeProc = shadeSpan_radial_mirror;
         } else {
-            SkASSERT(SkShader::kRepeat_TileMode == fTileMode);
+            SkASSERT(SkShader::kRepeat_TileMode == radialGradient.fTileMode);
         }
         (*shadeProc)(srcPt.fX, sdx, srcPt.fY, sdy, dstC, cache, count, toggle);
     } else {    // perspective case
@@ -522,7 +538,7 @@ GrEffectRef* GrRadialGradient::TestCreate(SkRandom* random,
                                                                  colors, stops, colorCount,
                                                                  tm));
     SkPaint paint;
-    return shader->asNewEffect(context, paint);
+    return shader->asNewEffect(context, paint, NULL);
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -543,12 +559,20 @@ void GrGLRadialGradient::emitCode(GrGLShaderBuilder* builder,
 
 /////////////////////////////////////////////////////////////////////
 
-GrEffectRef* SkRadialGradient::asNewEffect(GrContext* context, const SkPaint&) const {
+GrEffectRef* SkRadialGradient::asNewEffect(GrContext* context, const SkPaint&,
+                                           const SkMatrix* localMatrix) const {
     SkASSERT(NULL != context);
 
     SkMatrix matrix;
     if (!this->getLocalMatrix().invert(&matrix)) {
         return NULL;
+    }
+    if (localMatrix) {
+        SkMatrix inv;
+        if (!localMatrix->invert(&inv)) {
+            return NULL;
+        }
+        matrix.postConcat(inv);
     }
     matrix.postConcat(fPtsToUnit);
     return GrRadialGradient::Create(context, *this, matrix, fTileMode);
@@ -556,7 +580,7 @@ GrEffectRef* SkRadialGradient::asNewEffect(GrContext* context, const SkPaint&) c
 
 #else
 
-GrEffectRef* SkRadialGradient::asNewEffect(GrContext*, const SkPaint&) const {
+GrEffectRef* SkRadialGradient::asNewEffect(GrContext*, const SkPaint&, const SkMatrix*) const {
     SkDEBUGFAIL("Should not call in GPU-less build");
     return NULL;
 }
