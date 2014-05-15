@@ -154,6 +154,7 @@ def generate_separated_sources(platform_sources):
   blacklist = [
     'ChromeUtils',
     'SkImageDecoder_',
+    '_dw',
     '_gif',
     'SkFontConfigParser_android',
     'SkJpeg',
@@ -167,6 +168,7 @@ def generate_separated_sources(platform_sources):
     'SkNativeGLContext',
     'SkFontConfig',
     'SkFontHost_win_dw',
+    'DWrite',
     'SkForceLinking',
     'SkMovie',
     'SkImageDecoder',
