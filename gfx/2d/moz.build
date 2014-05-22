@@ -69,13 +69,9 @@ elif CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
 
 if CONFIG['MOZ_ENABLE_SKIA']:
     UNIFIED_SOURCES += [
-        'convolver.cpp',
         'DrawTargetSkia.cpp',
         'PathSkia.cpp',
         'SourceSurfaceSkia.cpp',
-    ]
-    SOURCES += [
-        'image_operations.cpp', # Uses _USE_MATH_DEFINES
     ]
 
 # Are we targeting x86 or x64?  If so, build SSE2 files.

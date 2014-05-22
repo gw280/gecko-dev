@@ -7,7 +7,8 @@
 #ifdef USE_SKIA
 #include "HelpersSkia.h"
 #include "skia/SkBitmap.h"
-#include "image_operations.h"
+#include "skia/SkBitmapProcState.h"
+#include "skia/SkBitmapScaler.h"
 #endif
 
 namespace mozilla {
@@ -36,14 +37,17 @@ bool Scale(uint8_t* srcData, int32_t srcWidth, int32_t srcHeight, int32_t srcStr
     imgSrc.copyTo(&imgSrc, kRGBA_8888_SkColorType);
   }
 
-  // This returns an SkBitmap backed by dstData; since it also wrote to dstData,
-  // we don't need to look at that SkBitmap.
-  SkBitmap result = skia::ImageOperations::Resize(imgSrc,
-                                                  skia::ImageOperations::RESIZE_BEST,
-                                                  dstWidth, dstHeight,
-                                                  dstData);
+  SkBitmap result;
+  result.setConfig(config, dstWidth, dstHeight, dstStride, alphaType);
+  result.setPixels(dstData);
 
-  return !result.isNull();
+  SkConvolutionProcs convolveProcs;
+  SkBitmapProcState state;
+  state.platformConvolutionProcs(&convolveProcs);
+
+  return SkBitmapScaler::Resize(&result, imgSrc,
+                                SkBitmapScaler::ResizeMethod::RESIZE_BEST,
+                                dstWidth, dstHeight, convolveProcs);
 #else
   return false;
 #endif
