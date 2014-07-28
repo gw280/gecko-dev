@@ -916,13 +916,6 @@ static GrGLInterface* CreateGrGLInterfaceFromGLContext(GLContext* context)
     // Desktop OpenGL > 2.0
     i->fFunctions.fDrawBuffers = glDrawBuffers_mozilla;
 
-    // Desktop OpenGL < 3.2 (which we pretend to be)
-    i->fFunctions.fLoadIdentity = glLoadIdentity_mozilla;
-    i->fFunctions.fLoadMatrixf = glLoadMatrixf_mozilla;
-    i->fFunctions.fMatrixMode = glMatrixMode_mozilla;
-    i->fFunctions.fTexGenfv = glTexGenfv_mozilla;
-    i->fFunctions.fTexGeni = glTexGeni_mozilla;
-
     return i;
 }
 
