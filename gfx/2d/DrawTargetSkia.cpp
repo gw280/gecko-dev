@@ -174,8 +174,8 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
         if (shader) {
             SkMatrix mat;
             GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
-            shader->setLocalMatrix(mat);
-            SkSafeUnref(aPaint.setShader(shader));
+            SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+            SkSafeUnref(aPaint.setShader(matrixShader));
         }
 
       } else {
@@ -204,8 +204,8 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
         if (shader) {
             SkMatrix mat;
             GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
-            shader->setLocalMatrix(mat);
-            SkSafeUnref(aPaint.setShader(shader));
+            SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+            SkSafeUnref(aPaint.setShader(matrixShader));
         }
 
       } else {
@@ -222,8 +222,8 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
       SkShader* shader = SkShader::CreateBitmapShader(bitmap, mode, mode);
       SkMatrix mat;
       GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
-      shader->setLocalMatrix(mat);
-      SkSafeUnref(aPaint.setShader(shader));
+      SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+      SkSafeUnref(aPaint.setShader(matrixShader));
       if (pat.mFilter == Filter::POINT) {
         aPaint.setFilterLevel(SkPaint::kNone_FilterLevel);
       }
@@ -581,7 +581,8 @@ DrawTargetSkia::MaskSurface(const Pattern &aSource,
 
     SkMatrix transform = maskPaint.getShader()->getLocalMatrix();
     transform.postTranslate(SkFloatToScalar(aOffset.x), SkFloatToScalar(aOffset.y));
-    maskPaint.getShader()->setLocalMatrix(transform);
+    SkShader* matrixShader = SkShader::CreateLocalMatrixShader(maskPaint.getShader(), transform);
+    maskPaint.setShader(matrixShader);
 
     SkLayerRasterizer::Builder builder;
     builder.addLayer(maskPaint);
