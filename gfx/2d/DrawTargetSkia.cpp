@@ -108,9 +108,15 @@ GetBitmapForSurface(SourceSurface* aSurface)
     MOZ_CRASH("Non-skia SourceSurfaces need to be DataSourceSurfaces");
   }
 
-  result.mBitmap.setConfig(GfxFormatToSkiaConfig(surf->GetFormat()),
-                                 surf->GetSize().width, surf->GetSize().height,
-                                 surf->Stride());
+  SkAlphaType alphaType = (surf->GetFormat() == SurfaceFormat::B8G8R8X8) ?
+    kOpaque_SkAlphaType : kPremul_SkAlphaType;
+
+  SkImageInfo info = SkImageInfo::Make(surf->GetSize().width,
+                                       surf->GetSize().height,
+                                       GfxFormatToSkiaColorType(surf->GetFormat()),
+                                       alphaType);
+  result.mBitmap.setInfo(info);
+
   result.mBitmap.setPixels(surf->GetData());
   result.mTmpSurface = surf.forget();
   return result;
@@ -687,7 +693,7 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
   TempBitmap bitmap = GetBitmapForSurface(aSurface);
 
   // This is a fast path that is disabled for now to mimimize risk
-  if (false && !bitmap.mBitmap.getTexture() && mCanvas->getDevice()->config() == bitmap.mBitmap.config()) {
+  if (false && !bitmap.mBitmap.getTexture() && mCanvas->imageInfo() == bitmap.mBitmap.info()) {
 	SkBitmap bm(bitmap.mBitmap);
 	bm.lockPixels();
 	if (bm.getPixels()) {
@@ -709,7 +715,7 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
   mCanvas->clipRect(dest, SkRegion::kReplace_Op);
   SkPaint paint;
 
-  if (mCanvas->getDevice()->config() == SkBitmap::kRGB_565_Config) {
+  if (mCanvas->imageInfo().colorType() == kRGB_565_SkColorType) {
     // Set the xfermode to SOURCE_OVER to workaround
     // http://code.google.com/p/skia/issues/detail?id=628
     // RGB565 is opaque so they're equivalent anyway
@@ -719,7 +725,7 @@ DrawTargetSkia::CopySurface(SourceSurface *aSurface,
   }
   // drawBitmapRect with A8 bitmaps ends up doing a mask operation
   // so we need to clear before
-  if (bitmap.mBitmap.config() == SkBitmap::kA8_Config) {
+  if (bitmap.mBitmap.colorType() == kAlpha_8_SkColorType) {
     SkPaint clearPaint;
     clearPaint.setColor(SkColorSetARGB(0, 0, 0, 0));
     clearPaint.setXfermodeMode(SkXfermode::kSrc_Mode);
@@ -809,7 +815,12 @@ DrawTargetSkia::Init(unsigned char* aData, const IntSize &aSize, int32_t aStride
   }
 
   SkBitmap bitmap;
-  bitmap.setConfig(GfxFormatToSkiaConfig(aFormat), aSize.width, aSize.height, aStride, alphaType);
+
+  SkImageInfo info = SkImageInfo::Make(aSize.width,
+                                       aSize.height,
+                                       GfxFormatToSkiaColorType(aFormat),
+                                       alphaType);
+  bitmap.setInfo(info);
   bitmap.setPixels(aData);
   SkAutoTUnref<SkCanvas> canvas(new SkCanvas(new SkBitmapDevice(bitmap)));
 
