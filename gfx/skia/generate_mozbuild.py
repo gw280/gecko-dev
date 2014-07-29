@@ -37,7 +37,7 @@ if not CONFIG['INTEL_ARCHITECTURE'] and CONFIG['CPU_ARCH'] == 'arm' and CONFIG['
             'trunk/src/opts/memset32_neon.S',
         ]
 
-if CONFIG['INTEL_ARCHITECTURE']:
+if CONFIG['INTEL_ARCHITECTURE'] and (CONFIG['GNU_CC'] or CONFIG['CLANG_CL']):
     if CONFIG['CPU_ARCH'] == 'x86_64':
         SOURCES += [
             'trunk/src/opts/SkBlitRow_opts_SSE4_x64_asm.S',
@@ -199,6 +199,7 @@ def generate_separated_sources(platform_sources):
     'SkCity',
     'GrGLCreateNativeInterface',
     'fontconfig',
+    'SkCondVar',
     'SkThreadUtils_pthread_',
     'SkImage_Codec',
     'SkBitmapChecksummer',
@@ -342,6 +343,7 @@ def write_sources(f, values, indent):
     '_SSSE',
     '_neon',
     'FontHost',
+    'SkAdvancedTypefaceMetrics',
     'SkBitmapProcState_matrixProcs.cpp',
     'SkBlitter_A8.cpp',
     'SkBlitter_ARGB32.cpp',
@@ -421,7 +423,9 @@ def write_mozbuild(includes, sources):
   write_sources(f, sources['linux'], 4)
 
   f.write("if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':\n")
-  write_sources(f, sources['win'], 4)
+  # Windows-specific files don't get unification because of nasty headers.
+  # Luckily there are not many files in this.
+  write_list(f, "SOURCES", sources['win'], 4)
 
   f.write("if CONFIG['INTEL_ARCHITECTURE']:\n")
   write_sources(f, sources['intel'], 4)
