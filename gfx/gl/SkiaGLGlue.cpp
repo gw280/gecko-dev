@@ -730,33 +730,6 @@ GrGLvoid glGenVertexArrays_mozilla(GrGLsizei n, GrGLuint *arrays) {
     return sGLContext.get()->fGenVertexArrays(n, arrays);
 }
 
-// Additional functions required for desktop GL < version 3.2
-
-GrGLvoid glLoadMatrixf_mozilla(const GLfloat* matrix)
-{
-    return sGLContext.get()->fLoadMatrixf(matrix);
-}
-
-GrGLvoid glLoadIdentity_mozilla()
-{
-    return sGLContext.get()->fLoadIdentity();
-}
-
-GrGLvoid glMatrixMode_mozilla(GrGLenum mode)
-{
-    return sGLContext.get()->fMatrixMode(mode);
-}
-
-GrGLvoid glTexGeni_mozilla(GrGLenum coord, GrGLenum pname, GrGLint param)
-{
-    return sGLContext.get()->fTexGeni(coord, pname, param);
-}
-
-GrGLvoid glTexGenfv_mozilla(GrGLenum coord, GrGLenum pname, const GrGLfloat* param)
-{
-    return sGLContext.get()->fTexGenfv(coord, pname, param);
-}
-
 } // extern "C"
 
 static GrGLInterface* CreateGrGLInterfaceFromGLContext(GLContext* context)

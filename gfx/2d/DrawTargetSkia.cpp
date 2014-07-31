@@ -175,6 +175,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
             SkMatrix mat;
             GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
             SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+            SkSafeUnref(shader);
             SkSafeUnref(aPaint.setShader(matrixShader));
         }
 
@@ -205,6 +206,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
             SkMatrix mat;
             GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
             SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+            SkSafeUnref(shader);
             SkSafeUnref(aPaint.setShader(matrixShader));
         }
 
@@ -223,6 +225,7 @@ SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern, TempBitmap& aTmpBitmap
       SkMatrix mat;
       GfxMatrixToSkiaMatrix(pat.mMatrix, mat);
       SkShader* matrixShader = SkShader::CreateLocalMatrixShader(shader, mat);
+      SkSafeUnref(shader);
       SkSafeUnref(aPaint.setShader(matrixShader));
       if (pat.mFilter == Filter::POINT) {
         aPaint.setFilterLevel(SkPaint::kNone_FilterLevel);
