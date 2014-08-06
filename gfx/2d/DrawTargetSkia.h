@@ -130,12 +130,12 @@ private:
   bool UsingSkiaGPU() const;
 
 #ifdef USE_SKIA_GPU
-  SkRefPtr<GrContext> mGrContext;
+  RefPtrSkia<GrContext> mGrContext;
   uint32_t mTexture;
 #endif
 
   IntSize mSize;
-  SkRefPtr<SkCanvas> mCanvas;
+  RefPtrSkia<SkCanvas> mCanvas;
   SourceSurfaceSkia* mSnapshot;
 };
 
