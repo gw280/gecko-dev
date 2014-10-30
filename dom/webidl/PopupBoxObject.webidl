@@ -172,4 +172,6 @@ interface PopupBoxObject : BoxObject
   readonly attribute DOMString alignmentPosition;
   readonly attribute long alignmentOffset;
 
+  void setPopupState(DOMString popupState);
+
 };

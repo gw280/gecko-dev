@@ -76,6 +76,7 @@ public:
                          Event* aTriggerEvent);
 
   void GetPopupState(nsString& aState);
+  void SetPopupState(const nsAString& aPopupState);
 
   nsINode* GetTriggerNode() const;
 

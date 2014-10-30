@@ -28,12 +28,14 @@ this.SelectContentHelper.prototype = {
   init: function() {
     this.global.addMessageListener("Forms:SelectDropDownItem", this);
     this.global.addMessageListener("Forms:DismissedDropDown", this);
+    this.global.addMessageListener("Forms:XULEvent", this);
     this.global.addEventListener("pagehide", this);
   },
 
   uninit: function() {
     this.global.removeMessageListener("Forms:SelectDropDownItem", this);
     this.global.removeMessageListener("Forms:DismissedDropDown", this);
+    this.global.removeMessageListener("Forms:XULEvent", this);
     this.global.removeEventListener("pagehide", this);
     this.element = null;
     this.global = null;
@@ -71,6 +73,35 @@ this.SelectContentHelper.prototype = {
         //intentional fall-through
       case "Forms:DismissedDropDown":
         this.uninit();
+        break;
+      case "Forms:XULEvent":
+        let doc = this.element.ownerDocument;
+        let event = doc.createEvent("Events");
+        event.initEvent(message.data.type, true, true);
+
+        if (message.data.anonid != "") {
+          event.target = doc.getAnonymousElementByAttribute(this.element,
+                                                            "anonid",
+                                                            message.data.anonid);
+        } else {
+          event.target = doc.getElementById(message.data.id);
+        }
+        switch (message.data.type) {
+          case "popuphidden":
+            event.target.setPopupState("closed");
+            break;
+          case "popuphiding":
+            event.target.setPopupState("hiding");
+            break;
+          case "popupshown":
+            event.target.setPopupState("open");
+            break;
+          case "popupshowing":
+            event.target.setPopupState("showing");
+            break;
+        }
+
+        event.target.dispatchEvent(event);
         break;
     }
   },
@@ -112,6 +143,15 @@ function buildOptionListForChildren(node) {
         // backgroundColor: computedStyle.backgroundColor,
         // color: computedStyle.color,
         children: tagName == 'OPTGROUP' ? buildOptionListForChildren(child) : []
+      };
+      result.push(info);
+    } else if (child.tagName.substring(0, 4) == "xul:") {
+      let info = {
+        tagName: child.tagName,
+        textContent: child.getAttribute("label"),
+        anonid: child.getAttribute("anonid"),
+        children: child.tagName == "xul:menupopup" ? buildOptionListForChildren(child) : [],
+        hidden: child.getAttribute("hidden"),
       };
       result.push(info);
     }

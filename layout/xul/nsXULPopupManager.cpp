@@ -674,6 +674,13 @@ nsXULPopupManager::ShowMenu(nsIContent *aMenu,
   InitTriggerEvent(nullptr, nullptr, nullptr);
   popupFrame->InitializePopup(menuFrame->GetAnchor(), nullptr, position, 0, 0, true);
 
+  if (XRE_GetProcessType() == GeckoProcessType_Content &&
+      Preferences::GetBool("browser.tabs.remote.desktopbehavior", false)) {
+    nsContentUtils::DispatchChromeEvent(aMenu->OwnerDoc(), aMenu,
+                                        NS_LITERAL_STRING("mozshowdropdown"), true, false);
+    return;
+  }
+
   if (aAsynchronous) {
     nsCOMPtr<nsIRunnable> event =
       new nsXULPopupShowingEvent(popupFrame->GetContent(),

@@ -41,13 +41,24 @@ this.SelectParentHelper = {
     let popup = event.currentTarget;
     let menulist = popup.parentNode;
 
+    if (event.target.getAttribute("isMirroredXul") == "true") {
+      currentBrowser.messageManager.sendAsyncMessage("Forms:XULEvent", {
+        value: event.target.value,
+        anonid: event.target.getAttribute("childAnonId"),
+        id: event.target.id,
+        type: event.type
+      });
+      return;
+    }
+
     switch (event.type) {
       case "command":
-        if (event.target.hasAttribute("value")) {
-          currentBrowser.messageManager.sendAsyncMessage("Forms:SelectDropDownItem", {
-            value: event.target.value
-          });
+          if (event.target.hasAttribute("value")) {
+            currentBrowser.messageManager.sendAsyncMessage("Forms:SelectDropDownItem", {
+              value: event.target.value,
+            });
         }
+
         popup.hidePopup();
         break;
 
@@ -63,11 +74,17 @@ this.SelectParentHelper = {
   _registerListeners: function(popup) {
     popup.addEventListener("command", this);
     popup.addEventListener("popuphidden", this);
+    popup.addEventListener("popuphiding", this);
+    popup.addEventListener("popupshown", this);
+    popup.addEventListener("popupshowing", this);
   },
 
   _unregisterListeners: function(popup) {
     popup.removeEventListener("command", this);
     popup.removeEventListener("popuphidden", this);
+    popup.removeEventListener("popuphiding", this);
+    popup.removeEventListener("popupshown", this);
+    popup.removeEventListener("popupshowing", this);
   },
 
 };
@@ -76,7 +93,17 @@ function populateChildren(element, options, selectedIndex, startIndex = 0, isGro
   let index = startIndex;
 
   for (let option of options) {
-    let item = element.ownerDocument.createElement("menuitem");
+    let item = null;
+    if (option.tagName.substring(0, 4) == "xul:") {
+      item = element.ownerDocument.createElement(option.tagName.substring(4, option.tagName.length));
+      item.setAttribute("childAnonId", option.anonid);
+      item.setAttribute("hidden", option.hidden);
+      // This XUL node mirrors one in the child process
+      item.setAttribute("isMirroredXul", "true");
+    } else {
+      item = element.ownerDocument.createElement("menuitem");
+    }
+
     item.setAttribute("label", option.textContent);
 
     element.appendChild(item);

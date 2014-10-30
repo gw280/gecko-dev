@@ -135,6 +135,23 @@ PopupBoxObject::MoveToAnchor(Element* aAnchorElement,
 }
 
 void
+PopupBoxObject::SetPopupState(const nsAString& aPopupState)
+{
+  nsMenuPopupFrame *menuPopupFrame = mContent ? do_QueryFrame(mContent->GetPrimaryFrame()) : nullptr;
+  if (menuPopupFrame) {
+    if (aPopupState.LowerCaseEqualsLiteral("open")) {
+      menuPopupFrame->SetPopupState(ePopupShown);
+    } else if (aPopupState.LowerCaseEqualsLiteral("showing")) {
+      menuPopupFrame->SetPopupState(ePopupShowing);
+    } else if (aPopupState.LowerCaseEqualsLiteral("hiding")) {
+      menuPopupFrame->SetPopupState(ePopupHiding);
+    } else if (aPopupState.LowerCaseEqualsLiteral("closed")) {
+      menuPopupFrame->SetPopupState(ePopupClosed);
+    }
+  }
+}
+
+void
 PopupBoxObject::SizeTo(int32_t aWidth, int32_t aHeight)
 {
   if (!mContent)
