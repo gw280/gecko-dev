@@ -11,9 +11,11 @@ this.EXPORTED_SYMBOLS = [
 let currentBrowser = null;
 
 this.SelectParentHelper = {
-  populate: function(menulist, items, selectedIndex) {
+  populate: function(menulist, items, selectedIndex, direction) {
     // Clear the current contents of the popup
     menulist.menupopup.textContent = "";
+    menulist.menupopup.style.direction = direction;
+    menulist.style.direction = "rtl";
     populateChildren(menulist.menupopup, items, selectedIndex);
     // We expect the parent element of the popup to be a <xul:menulist> that
     // has the popuponly attribute set to "true". This is necessary in order
@@ -77,6 +79,7 @@ function populateChildren(element, options, selectedIndex, startIndex = 0, isGro
   for (let option of options) {
     let item = element.ownerDocument.createElement("menuitem");
     item.setAttribute("label", option.textContent);
+    item.style.direction = "rtl";
 
     element.appendChild(item);
 

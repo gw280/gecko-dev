@@ -46,6 +46,7 @@ this.SelectContentHelper.prototype = {
       rect: rect,
       options: this._buildOptionList(),
       selectedIndex: this.element.selectedIndex,
+      direction: this.element.ownerDocument.defaultView.getComputedStyle(this.element, null).getPropertyValue("direction"),
     });
   },
 
@@ -90,6 +91,7 @@ function buildOptionListForChildren(node) {
   let result = [];
   for (let child of node.children) {
     let tagName = child.tagName.toUpperCase();
+
     if (tagName == 'OPTION' || tagName == 'OPTGROUP') {
       let textContent =
         tagName == 'OPTGROUP' ? child.getAttribute("label")

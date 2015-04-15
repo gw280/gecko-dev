@@ -317,7 +317,7 @@
             case "Forms:ShowDropDown": {
               Cu.import("resource://gre/modules/SelectParentHelper.jsm");
               let menulist = document.getElementById(this.getAttribute("selectmenulist"));
-              SelectParentHelper.populate(menulist, data.options, data.selectedIndex);
+              SelectParentHelper.populate(menulist, data.options, data.selectedIndex, data.direction);
               SelectParentHelper.open(this, menulist, data.rect);
               break;
             }
