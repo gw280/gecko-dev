@@ -146,6 +146,7 @@ NS_IMPL_ISUPPORTS(nsBaseWidget, nsIWidget, nsISupportsWeakReference)
 nsBaseWidget::nsBaseWidget()
 : mWidgetListener(nullptr)
 , mAttachedWidgetListener(nullptr)
+, mPreviouslyAttachedWidgetListener(nullptr)
 , mLayerManager(nullptr)
 , mCompositorVsyncDispatcher(nullptr)
 , mCursor(eCursor_standard)
@@ -399,8 +400,16 @@ nsIWidgetListener* nsBaseWidget::GetAttachedWidgetListener()
    return mAttachedWidgetListener;
  }
 
+nsIWidgetListener* nsBaseWidget::GetPreviouslyAttachedWidgetListener()
+ {
+   return mPreviouslyAttachedWidgetListener;
+ }
+
 void nsBaseWidget::SetAttachedWidgetListener(nsIWidgetListener* aListener)
  {
+   if (mAttachedWidgetListener)
+     mPreviouslyAttachedWidgetListener = mAttachedWidgetListener;
+
    mAttachedWidgetListener = aListener;
  }
 

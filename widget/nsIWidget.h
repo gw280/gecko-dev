@@ -941,6 +941,7 @@ class nsIWidget : public nsISupports {
      */
     virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener) = 0;
     virtual nsIWidgetListener* GetAttachedWidgetListener() = 0;
+    virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener() = 0;
 
     /**
      * Accessor functions to get and set the listener which handles various

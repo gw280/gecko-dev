@@ -1096,3 +1096,9 @@ nsView::HandleEvent(WidgetGUIEvent* aEvent,
 
   return result;
 }
+
+bool
+nsView::IsPrimaryFramePaintSuppressed()
+{
+  return mFrame ? mFrame->PresContext()->PresShell()->IsPaintingSuppressed() : false;
+}
