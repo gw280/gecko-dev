@@ -84,7 +84,7 @@ _PDH_FMT_LONG = 0x00000100
 class WinCounterManager(CounterManager):
 
     def __init__(self, process_name, process, counters,
-                 childProcess="plugin-container"):
+                 childProcess="firefox-webcontent"):
         CounterManager.__init__(self)
         self.childProcess = childProcess
         self.registeredCounters = {}

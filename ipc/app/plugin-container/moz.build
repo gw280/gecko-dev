@@ -4,4 +4,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ['plugin-container', 'webcontent']
+include('../app-common.mozbuild')
+
+kwargs = {
+    'linkage': None,
+}
+if CONFIG['MOZ_SANDBOX'] and CONFIG['OS_ARCH'] == 'WINNT':
+    kwargs['msvcrt'] = 'static'
+
+GeckoProgram(CONFIG['MOZ_PLUGIN_PROCESS_NAME'], **kwargs)
+

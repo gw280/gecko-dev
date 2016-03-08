@@ -32,15 +32,15 @@ public:
 // Encapsulates generating the device-bound node id, activating the sandbox,
 // loading the GMP, and passing the node id to the GMP (in that order).
 //
-// In Desktop Gecko, the implementation of this lives in plugin-container,
+// In Desktop Gecko, the implementation of this lives in firefox-webcontent,
 // and is passed into XUL code from on startup. The GMP IPC child protocol actor
 // uses this interface to load and retrieve interfaces from the GMPs.
 //
-// In Desktop Gecko the implementation lives in the plugin-container so that
+// In Desktop Gecko the implementation lives in the firefox-webcontent so that
 // it can be covered by DRM vendor's voucher.
 //
 // On Android the GMPLoader implementation lives in libxul (because for the time
-// being GMPLoader relies upon NSPR, which we can't use in plugin-container
+// being GMPLoader relies upon NSPR, which we can't use in firefox-webcontent
 // on Android).
 //
 // There is exactly one GMPLoader per GMP child process, and only one GMP
@@ -73,7 +73,7 @@ public:
 #endif
 };
 
-// On Desktop, this function resides in plugin-container.
+// On Desktop, this function resides in firefox-webcontent.
 // On Mobile, this function resides in XUL.
 GMPLoader* CreateGMPLoader(SandboxStarter* aStarter);
 

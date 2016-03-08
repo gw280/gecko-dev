@@ -96,7 +96,7 @@ By default, the urls listed in `external_media_tests/urls/default.ini` are used 
 
 ### Running EME tests
 
-In order to run EME tests, you must use a Firefox profile that has a signed plugin-container.exe and voucher.bin. With Netflix, this will be created when you log in and save the credentials. You must also use a custom .ini file for urls to the provider's content and indicate which test to run, like above. Ex:
+In order to run EME tests, you must use a Firefox profile that has a signed firefox-webcontent.exe and voucher.bin. With Netflix, this will be created when you log in and save the credentials. You must also use a custom .ini file for urls to the provider's content and indicate which test to run, like above. Ex:
 
    ```sh
    $ $EXTERNAL-MEDIA-TESTS some/path/tests.ini --profile custom_profile --urls some/path/provider-urls.ini
